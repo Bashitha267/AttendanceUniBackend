@@ -46,6 +46,6 @@ app.listen(PORT, () => {
 app.get('/',(req,res)=>{
   return res.json({message:"working fine"})
 })
-app.head('/ping',()=>{
+app.head('/ping',(req,res)=>{
    return res.json({message:"working fine"})
 })
