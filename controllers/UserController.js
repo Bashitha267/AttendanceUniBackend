@@ -1,8 +1,12 @@
+import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import JWT from "../middleware/JWT.js";
 import { Student } from "../model/Student.js";
 import { Teacher } from "../model/Teacher.js";
+import { User } from "../model/User.js";
+
 dotenv.config();
 
 //login
@@ -36,46 +40,71 @@ async function Login(req, res) {
 }
 // Create a new user
 async function Signup(req, res) {
-  const { name, email, pno, dob, password, type } = req.body;
-  if (type === "student") {
-    const user = new Student({
-      name: name,
-      email: email,
-      pno: pno,
-      dob: dob,
-      password: password,
-    });
-    try {
-      const existingUser = await Student.findOne({ email: email });
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
-      } else {
-        const newUser = await user.save();
-        res.status(201).json(newUser);
-      }
-    } catch (err) {
-      res.status(400).json({ message: err.message });
+  const {name,email,password,role,dob,reg_no,gender,contact_no,img } = req.body;
+    if(!name||!email||!password||!role||!dob||!reg_no|!gender||!contact_no){
+      return res.json({message:"Missing Credentials"})
     }
-  } else {
-    const user = new Teacher({
-      name: name,
-      email: email,
-      pno: pno,
-      dob: dob,
-      password: password,
-    });
-    try {
-      const existingUser = await Teacher.findOne({ email: email }).exec();
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
-      } else {
-        const newUser = await user.save();
-        res.status(201).json(newUser);
-      }
-    } catch (err) {
-      res.status(400).json({ message: err.message });
+    try{
+      const existingUser=await User.findOne({email});
+    const exisitingReg=await User.findOne({reg_no})
+    if(existingUser){
+      return res.json({message:"Email  already registered"});
     }
-  }
+    if(exisitingReg){
+      return res.json({message:"Registration number  already registered"});
+      
+    }
+    const hashedPassWord=await bcrypt.hash(password,10)
+    const user=await User.create({name,email,password,dob,reg_no,gender,role,contact_no,img,password:hashedPassWord})
+    await user.save()
+    const token=jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'7d'})
+    res.cookie('token',token)
+    return res.json({success:true})
+
+    }
+    catch(e){
+      res.json({message:e})
+    }
+
+  // if (type === "student") {
+  //   const user = new Student({
+  //     name: name,
+  //     email: email,
+  //     pno: pno,
+  //     dob: dob,
+  //     password: password,
+  //   });
+  //   try {
+  //     const existingUser = await Student.findOne({ email: email });
+  //     if (existingUser) {
+  //       return res.status(400).json({ message: "User already exists" });
+  //     } else {
+  //       const newUser = await user.save();
+  //       res.status(201).json(newUser);
+  //     }
+  //   } catch (err) {
+  //     res.status(400).json({ message: err.message });
+  //   }
+  // } else {
+  //   const user = new Teacher({
+  //     name: name,
+  //     email: email,
+  //     pno: pno,
+  //     dob: dob,
+  //     password: password,
+  //   });
+  //   try {
+  //     const existingUser = await Teacher.findOne({ email: email }).exec();
+  //     if (existingUser) {
+  //       return res.status(400).json({ message: "User already exists" });
+  //     } else {
+  //       const newUser = await user.save();
+  //       res.status(201).json(newUser);
+  //     }
+  //   } catch (err) {
+  //     res.status(400).json({ message: err.message });
+  //   }
+  // }
 }
 //change password
 async function ForgotPassword(req, res) {
