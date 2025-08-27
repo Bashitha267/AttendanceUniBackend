@@ -46,7 +46,7 @@ async function Signup(req, res) {
       password: password,
     });
     try {
-      const existingUser = await Student.findOne({ email: email }).exec();
+      const existingUser = await Student.findOne({ email: email });
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       } else {
