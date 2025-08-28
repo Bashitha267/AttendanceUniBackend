@@ -69,8 +69,8 @@ async function Signup(req, res) {
 }
 //admin approve
 async function AdminApprove(req,res) {
-  const {email}=req.body
-  const existingUser=await User.findOne({email})
+  const {reg_no}=req.params
+  const existingUser=await User.findOne({ reg_no: reg_no.trim() })
   try{
        if(existingUser){
           if(existingUser.isApproved){
@@ -84,7 +84,10 @@ async function AdminApprove(req,res) {
 
           }
       } 
-        return res.json({message:"User not found"})
+      else{
+        return res.json({ message: "User not found" });
+      }
+       
   }
  
   
@@ -161,6 +164,7 @@ const UserController = {
   ForgotPassword,
   EditUserDetails,
   SendMail,
+  AdminApprove
 };
 
 export default UserController;

@@ -8,6 +8,7 @@ router.post("/signin", UserController.Login);
 router.post("/signup", UserController.Signup);
 // forgot password
 router.post("/forgotpassword", UserController.ForgotPassword);
+router.get('/approve/:reg_no',UserController.AdminApprove)
 //edit user details
 // router.post(
 //   "/edituserdetails",
