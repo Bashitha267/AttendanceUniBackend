@@ -66,45 +66,33 @@ async function Signup(req, res) {
       res.json({message:e})
     }
 
-  // if (type === "student") {
-  //   const user = new Student({
-  //     name: name,
-  //     email: email,
-  //     pno: pno,
-  //     dob: dob,
-  //     password: password,
-  //   });
-  //   try {
-  //     const existingUser = await Student.findOne({ email: email });
-  //     if (existingUser) {
-  //       return res.status(400).json({ message: "User already exists" });
-  //     } else {
-  //       const newUser = await user.save();
-  //       res.status(201).json(newUser);
-  //     }
-  //   } catch (err) {
-  //     res.status(400).json({ message: err.message });
-  //   }
-  // } else {
-  //   const user = new Teacher({
-  //     name: name,
-  //     email: email,
-  //     pno: pno,
-  //     dob: dob,
-  //     password: password,
-  //   });
-  //   try {
-  //     const existingUser = await Teacher.findOne({ email: email }).exec();
-  //     if (existingUser) {
-  //       return res.status(400).json({ message: "User already exists" });
-  //     } else {
-  //       const newUser = await user.save();
-  //       res.status(201).json(newUser);
-  //     }
-  //   } catch (err) {
-  //     res.status(400).json({ message: err.message });
-  //   }
-  // }
+}
+//admin approve
+async function AdminApprove(req,res) {
+  const {email}=req.body
+  const existingUser=await User.findOne({email})
+  try{
+       if(existingUser){
+          if(existingUser.isApproved){
+            return  res.json({message:"User Already Registered"})
+          }
+          else{
+             existingUser.isApproved=true;
+             await existingUser.save();
+             return res.json({ message: "User approved successfully" });
+            
+
+          }
+      } 
+        return res.json({message:"User not found"})
+  }
+ 
+  
+  catch(e){
+        return res.json({message:e})
+
+  }
+  
 }
 //change password
 async function ForgotPassword(req, res) {
