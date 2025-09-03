@@ -2,8 +2,6 @@ import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import JWT from "../middleware/JWT.js";
-import { Student } from "../model/Student.js";
 import { Teacher } from "../model/Teacher.js";
 import { User } from "../model/User.js";
 
@@ -12,31 +10,38 @@ dotenv.config();
 //login
 async function Login(req, res) {
   const { email, password } = req.body;
-  let type = "student";
+  
   //check if user is a student
-  let user = await Student.findOne({ email });
-  if (!user) {
-    type = "teacher";
-    user = await Teacher.findOne({ email });
-  }
+  let user = await User.findOne({ email });
+  
 
   if (user) {
-    if (user.password === password) {
-      const token = JWT.generateToken({ email: user.email });
-      user.type = type;
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+   if(user.isApproved){
+      const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      const token = jwt.sign({reg_no:user.reg_no,email:user.email,role:user.role,name:user.name,image:user.image,gender:user.gender},process.env.JWT_SECRET,{expiresIn:"7d"});
+      
+        res.cookie('token',token,{
+            httpOnly:true,
         })
-        .status(200)
-        .json({ user: user, type: type, token: token });
+        res.status(200).json({
+  message: "Login successful",
+  success:true,
+  token,
+});
     } else {
-      res.status(400).json({ message: "Invalid email or password" });
+      res.status(400).json({ success:false,message: "Invalid  password" });
     }
+   }
+   else{
+    res.status(400).json({ success:false,message: "Admin not approved.Try again later" });
+   }
+  
   } else {
-    res.status(400).json({ message: "No such User" });
+    res.status(400).json({ success:false,message: "No such User" });
   }
+
+
 }
 // Create a new user
 async function Signup(req, res) {
@@ -97,11 +102,23 @@ async function AdminApprove(req,res) {
   }
   
 }
+
+//getusers for testing
+async function getUsers(req,res) {
+  try{
+const user=await User.find({},"name email contact_no")
+return   res.json({message:"success",user})
+  }catch(e){
+    return res.json({message:e})
+  }
+  
+  
+}
 //change password
 async function ForgotPassword(req, res) {
   const { email, password } = req.body;
   //check if user is a student
-  let user = await Student.findOneAndUpdate({ email }, { password }).exec();
+  let user = await User.findOneAndUpdate({ email }, { password }).exec();
   if (!user) {
     user = await Teacher.findOneAndUpdate({ email }, { password }).exec();
   }
@@ -116,7 +133,7 @@ async function ForgotPassword(req, res) {
 async function EditUserDetails(req, res) {
   const { email, name, pno, dob } = req.body;
   //check if user is a student
-  let user = await Student.findOne
+  let user = await User.findOne
     .findOneAndUpdate({ email }, { name, pno, dob })
     .exec();
   if (!user) {
@@ -164,7 +181,8 @@ const UserController = {
   ForgotPassword,
   EditUserDetails,
   SendMail,
-  AdminApprove
+  AdminApprove,
+  getUsers
 };
 
 export default UserController;
