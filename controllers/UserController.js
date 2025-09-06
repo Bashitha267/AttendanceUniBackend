@@ -1,42 +1,46 @@
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
-import JWT from "../middleware/JWT.js";
-import { Student } from "../model/Student.js";
+import transporter from "../middleware/Mailer.js";
 import { Teacher } from "../model/Teacher.js";
 import { User } from "../model/User.js";
-
 dotenv.config();
 
 //login
 async function Login(req, res) {
   const { email, password } = req.body;
-  let type = "student";
+  
   //check if user is a student
-  let user = await Student.findOne({ email });
-  if (!user) {
-    type = "teacher";
-    user = await Teacher.findOne({ email });
-  }
+  let user = await User.findOne({ email });
+  
 
   if (user) {
-    if (user.password === password) {
-      const token = JWT.generateToken({ email: user.email });
-      user.type = type;
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+   if(user.isApproved){
+      const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      const token = jwt.sign({reg_no:user.reg_no,email:user.email,role:user.role,name:user.name,image:user.image,gender:user.gender},process.env.JWT_SECRET,{expiresIn:"7d"});
+      
+        res.cookie('token',token,{
+            httpOnly:true,
         })
-        .status(200)
-        .json({ user: user, type: type, token: token });
+        res.status(200).json({
+  message: "Login successful",
+  success:true,
+  token,
+});
     } else {
-      res.status(400).json({ message: "Invalid email or password" });
+      res.status(400).json({ success:false,message: "Invalid  password" });
     }
+   }
+   else{
+    res.status(400).json({ success:false,message: "Admin not approved.Try again later" });
+   }
+  
   } else {
-    res.status(400).json({ message: "No such User" });
+    res.status(400).json({ success:false,message: "No such User" });
   }
+
+
 }
 // Create a new user
 async function Signup(req, res) {
@@ -55,7 +59,26 @@ async function Signup(req, res) {
       
     }
     const hashedPassWord=await bcrypt.hash(password,10)
-    const user=await User.create({name,email,password,dob,reg_no,gender,role,contact_no,img,password:hashedPassWord})
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const user=await User.create({name,email,password,dob,reg_no,gender,role,contact_no,img,password:hashedPassWord,otp:otp})
+ 
+      const mailOptions = {
+      from: process.env.EMAIL, // use your env variable
+      to: email,               // now dynamic
+      subject: "OTP Verification",
+      text: `Hello! Your OTP code is ${user.otp}`,
+    };
+
+    // use await instead of callback
+    const info = await transporter.sendMail(mailOptions);
+
+    console.log("Email sent:", info.response);
+
+    // return res.json({
+    //   success: true,
+    //   message: "Verification email sent",
+    //   otp, // ⚠️ remove in production, store securely instead
+    // });
     await user.save()
     const token=jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'7d'})
     res.cookie('token',token)
@@ -97,11 +120,23 @@ async function AdminApprove(req,res) {
   }
   
 }
+
+//getusers for testing
+async function getUsers(req,res) {
+  try{
+const user=await User.find({},"name email contact_no reg_no")
+return   res.json({message:"success",user})
+  }catch(e){
+    return res.json({message:e})
+  }
+  
+  
+}
 //change password
 async function ForgotPassword(req, res) {
   const { email, password } = req.body;
   //check if user is a student
-  let user = await Student.findOneAndUpdate({ email }, { password }).exec();
+  let user = await User.findOneAndUpdate({ email }, { password }).exec();
   if (!user) {
     user = await Teacher.findOneAndUpdate({ email }, { password }).exec();
   }
@@ -116,7 +151,7 @@ async function ForgotPassword(req, res) {
 async function EditUserDetails(req, res) {
   const { email, name, pno, dob } = req.body;
   //check if user is a student
-  let user = await Student.findOne
+  let user = await User.findOne
     .findOneAndUpdate({ email }, { name, pno, dob })
     .exec();
   if (!user) {
@@ -128,34 +163,42 @@ async function EditUserDetails(req, res) {
     res.status(200).json({ message: "User updated" });
   }
 }
+// DELETE all users
+async function DeleteAllUsers(req, res) {
+  try {
+    await User.deleteMany({}); // removes all documents from User collection
+
+    res.status(200).json({ message: "All users deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error deleting users", error: err.message });
+  }
+}
+
 
 //send mail
-function SendMail(req, res) {
-  const { email } = req.body;
-  const otp = Math.floor(100000 + Math.random() * 900000);
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL,
-      pass: process.env.PASSWORD,
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL,
-    to: email,
-    subject: "OTP for registration",
-    text: `Your OTP is ${otp}`,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      res.status(400).json({ message: error.message });
-    } else {
-      console.log("Email sent: " + info.response);
-      res.status(200).json({ message: "OTP sent successfully", otp: otp });
+async function SendMail(req, res) {
+  try {
+    const { email,otp } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
     }
-  });
+    const user=await User.findOne({email})
+    if(!user){
+      return res.status(400).json({ success: false, message: "No user found" });
+    }
+    if(user.otp===otp){
+       return res.status(200).json({ success: success, message: "Verification Success.Pending Admin Approved" });
+    }
+    
+
+    
+
+    
+
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error })
+  }
 }
 
 const UserController = {
@@ -164,7 +207,9 @@ const UserController = {
   ForgotPassword,
   EditUserDetails,
   SendMail,
-  AdminApprove
+  AdminApprove,
+  getUsers,
+  DeleteAllUsers
 };
 
 export default UserController;

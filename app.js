@@ -4,7 +4,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
-import SessionRoutes from "./routes/SessionRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 dotenv.config();
 
@@ -15,7 +14,7 @@ const MONGODB_URI = process.env.MONGODB;
 // Middleware
 app.use(
   cors({
-    origin: "http://localhost:3000", // your React frontend URL
+     origin: 'http://localhost:5173',
     credentials: true,               // allow cookies and auth headers
   })
 );
@@ -37,7 +36,7 @@ mongoose
 
 // Routes
 app.use("/users", userRoutes);
-app.use("/sessions", SessionRoutes);
+// app.use("/sessions", SessionRoutes);
 
 // Start the server
 app.listen(PORT, () => {

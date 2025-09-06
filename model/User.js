@@ -14,9 +14,12 @@ const UserSchema=new schema(
     gender:{type:String,
         enum:['male','female']
     },
-    isApproved:{type:Boolean,required:true,default:false},
+    isApproved:{type:Boolean,default:false},
     image:{type:String},
     dob:{type:String,required:true},
+    isVerified:{type:Boolean,default:false},
+    otp:{type:String,default:""},
+    emailVerified:{type:Boolean,default:false}
 
 }
 
