@@ -17,7 +17,9 @@ const UserSchema=new schema(
     isApproved:{type:Boolean,default:false},
     image:{type:String},
     dob:{type:String,required:true},
-    isVerified:{type:Boolean,default:false}
+    isVerified:{type:Boolean,default:false},
+    otp:{type:String,default:""},
+    emailVerified:{type:Boolean,default:false}
 
 }
 

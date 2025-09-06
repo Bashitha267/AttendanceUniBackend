@@ -14,7 +14,7 @@ const MONGODB_URI = process.env.MONGODB;
 // Middleware
 app.use(
   cors({
-     // your React frontend URL
+     origin: 'http://localhost:5173',
     credentials: true,               // allow cookies and auth headers
   })
 );

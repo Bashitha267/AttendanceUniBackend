@@ -11,6 +11,7 @@ router.get('/getusers',UserController.getUsers)
 // forgot password
 router.post("/forgotpassword", UserController.ForgotPassword);
 router.put('/approve/:reg_no',UserController.AdminApprove)
+router.delete('/deleteUsers',UserController.DeleteAllUsers)
 //edit user details
 // router.post(
 //   "/edituserdetails",
