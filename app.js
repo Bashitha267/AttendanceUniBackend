@@ -14,8 +14,10 @@ const MONGODB_URI = process.env.MONGODB;
 // Middleware
 app.use(
   cors({
-     origin: 'http://localhost:5173',
-    credentials: true,               // allow cookies and auth headers
+    origin: (origin, callback) => {
+      callback(null, origin || true); // reflect the request origin
+    },
+    credentials: true, // allow cookies / auth headers
   })
 );
 app.use(cookieParser());
