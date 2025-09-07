@@ -91,46 +91,58 @@ async function Signup(req, res) {
 
 }
 //admin approve
-async function AdminApprove(req,res) {
-  const {reg_no}=req.params
-  const existingUser=await User.findOne({ reg_no: reg_no.trim() })
-  try{
-       if(existingUser){
-          if(existingUser.isApproved){
-            return  res.json({message:"User Already Registered"})
-          }
-          else{
-             existingUser.isApproved=true;
-             await existingUser.save();
-             return res.json({ message: "User approved successfully" });
-            
+// Approve a user
+async function AdminApprove(req, res) {
+  try {
+    const { reg_no } = req.params;
 
-          }
-      } 
-      else{
-        return res.json({ message: "User not found" });
-      }
-       
-  }
- 
-  
-  catch(e){
-        return res.json({message:e})
+    if (!reg_no) {
+      return res.status(400).json({ success: false, message: "Registration number is required" });
+    }
 
+    const updatedUser = await User.findOneAndUpdate(
+      { reg_no: reg_no.trim(), isApproved: false }, // find unapproved user
+      { isApproved: true },                          // update
+      { new: true }                                  // return updated document
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found or already approved" });
+    }
+
+    return res.status(200).json({ success: true, message: "User approved successfully" });
+
+  } catch (error) {
+    console.error("AdminApprove Error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
-  
 }
+
+
 
 //getusers for testing
 async function getUsers(req,res) {
   try{
-const user=await User.find({},"name email contact_no reg_no")
+const user=await User.find({},"name email contact_no reg_no emailVerified")
 return   res.json({message:"success",user})
   }catch(e){
     return res.json({message:e})
   }
   
   
+}
+async function getNotApprovedUsers(req,res){
+  try{
+    const users=await User.find({isApproved:false,emailVerified:true}) 
+    if(users){
+      return res.json({success:true,users})
+    }
+    return res.json({success:true,message:"no users found"})
+
+  }catch(e){
+        return res.json({success:true,message:e})
+
+  }
 }
 //change password
 async function ForgotPassword(req, res) {
@@ -168,13 +180,33 @@ async function DeleteAllUsers(req, res) {
   try {
     await User.deleteMany({}); // removes all documents from User collection
 
-    res.status(200).json({ message: "All users deleted successfully" });
+    return res.status(200).json({ message: "All users deleted successfully" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error deleting users", error: err.message });
+    return res.status(500).json({ message: "Error deleting users", error: err.message });
   }
 }
+async function DeleteUser(req, res) {
+  try {
+    let { reg_no } = req.params;
+    if (!reg_no) {
+      return res.status(400).json({ message: "Registration number is required", success: false });
+    }
 
+    reg_no = reg_no.trim(); // remove whitespace
+
+    const user = await User.findOne({ reg_no });
+    if (!user) {
+      return res.status(404).json({ message: "No User Found", success: false });
+    }
+
+    await user.deleteOne();
+    return res.status(200).json({ message: "User Deleted Successfully", success: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+}
 
 //send mail
 async function SendMail(req, res) {
@@ -188,7 +220,9 @@ async function SendMail(req, res) {
       return res.status(400).json({ success: false, message: "No user found" });
     }
     if(user.otp===otp){
-       return res.status(200).json({ success: success, message: "Verification Success.Pending Admin Approved" });
+      await user.updateOne({emailVerified:true})
+       return res.status(200).json({ success: true, message: "Verification Success.Pending Admin Approved" });
+       
     }
     
 
@@ -209,7 +243,9 @@ const UserController = {
   SendMail,
   AdminApprove,
   getUsers,
-  DeleteAllUsers
+  DeleteAllUsers,
+  getNotApprovedUsers,
+  DeleteUser
 };
 
 export default UserController;

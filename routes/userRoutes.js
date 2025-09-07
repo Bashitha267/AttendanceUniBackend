@@ -12,12 +12,15 @@ router.get('/getusers',UserController.getUsers)
 router.post("/forgotpassword", UserController.ForgotPassword);
 router.put('/approve/:reg_no',UserController.AdminApprove)
 router.delete('/deleteUsers',UserController.DeleteAllUsers)
+router.get('/getnotapproved',UserController.getNotApprovedUsers)
+router.delete('/deleteuser/:reg_no',UserController.DeleteUser)
+
 //edit user details
 // router.post(
 //   "/edituserdetails",
 //   JWT.verifyToken,
 //   UserController.EditUserDetails
-// );
+// );gi
 // send mail
 router.post("/sendmail", UserController.SendMail);
 
