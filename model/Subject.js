@@ -3,17 +3,17 @@ const schema = mongoose.Schema;
 
 const subjectSchema = new schema(
   {
-    subjectCode: { type: String, required: true, unique:true },
+    subjectCode: { type: String, required: true},
     name: { type: String, required: true },
     year: { type: Number, required: true },
     semester: { type: Number, required: true },
     studentsEnrolled : [{
-        type: schema.Types.ObjectId,
-        ref: 'User'
+        type: String, 
+      default:[]
     }],
-    lecture : {
-        type: schema.Types.ObjectId,
-        ref: 'User',
+    lecturerId : {
+       type:String,
+
         required: true
     }
   },
