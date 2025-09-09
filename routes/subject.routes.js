@@ -10,7 +10,7 @@ router.post('/create', createSubject);
 router.post("/:subjectCode/enroll/:reg_no", enrollStudent);
 
 // Enroll multiple students
-router.post("/:subjectCode/enroll", enrollMultipleStudents);
+router.post("/:subjectCode/:batchYear/:year/enroll", enrollMultipleStudents);
 // You can add other routes for this resource here, for example:
 // router.get('/', getAllSubjects);
 // router.get('/:id', getSubjectById);

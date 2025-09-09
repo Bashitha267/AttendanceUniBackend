@@ -207,7 +207,27 @@ async function DeleteUser(req, res) {
     return res.status(500).json({ message: "Server error", success: false });
   }
 }
+async function DeleteUserByEmail(req, res) {
+  try {
+    const { _id } = req.params;
+    if (!_id) {
+      return res.status(400).json({ message: "email is required", success: false });
+    }
 
+    // reg_no = reg_no.trim(); // remove whitespace
+
+    const user = await User.findById(_id);
+    if (!user) {
+      return res.status(404).json({ message: "No User Found", success: false });
+    }
+
+    await user.deleteOne();
+    return res.status(200).json({ message: "User Deleted Successfully", success: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+}
 //send mail
 async function SendMail(req, res) {
   try {
@@ -245,7 +265,8 @@ const UserController = {
   getUsers,
   DeleteAllUsers,
   getNotApprovedUsers,
-  DeleteUser
+  DeleteUser,
+  DeleteUserByEmail
 };
 
 export default UserController;

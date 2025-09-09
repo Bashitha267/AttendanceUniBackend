@@ -7,6 +7,7 @@ const subjectSchema = new schema(
     name: { type: String, required: true },
     year: { type: Number, required: true },
     semester: { type: Number, required: true },
+     batchYear: { type: Number, required: true },
     studentsEnrolled : [{
         type: String, 
       default:[]
@@ -21,3 +22,4 @@ const subjectSchema = new schema(
 );
 
 export const Subject = mongoose.model("Subject", subjectSchema);
+

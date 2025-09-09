@@ -14,6 +14,7 @@ router.put('/approve/:reg_no',UserController.AdminApprove)
 router.delete('/deleteUsers',UserController.DeleteAllUsers)
 router.get('/getnotapproved',UserController.getNotApprovedUsers)
 router.delete('/deleteuser/:reg_no',UserController.DeleteUser)
+router.delete('/deleteuserbyid/:_id',UserController.DeleteUserByEmail)
 
 //edit user details
 // router.post(
