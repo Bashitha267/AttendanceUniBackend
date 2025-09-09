@@ -4,10 +4,10 @@ import { User } from '../model/User.js';
 export const createSubject = async (req, res) => {
     try {
         // 1. Get the data from the request body
-        const { subjectCode, name, year, semester, lecturerId } = req.body;
+        const { subjectCode, name, year, semester, lecturerId,batchYear } = req.body;
 
         // 2. Perform basic validation to ensure required fields are present
-        if (!subjectCode || !name || !year || !semester || !lecturerId) {
+        if (!subjectCode || !name || !year || !semester || !lecturerId||!batchYear) {
             return res.status(400).json({ 
                 message: 'Please provide all required fields: subjectCode, name, year, semester, and lecturerId.' 
             });
@@ -15,7 +15,7 @@ export const createSubject = async (req, res) => {
 
         // 3. Check if this specific subject offering already exists
         // The unique index in your model also protects against this, but this provides a clearer error message.
-        const subjectExists = await Subject.findOne({ subjectCode, year, semester });
+        const subjectExists = await Subject.findOne({ subjectCode, year, semester,batchYear });
         if (subjectExists) {
             return res.status(409).json({ // 409 Conflict
                 message: 'This subject offering already exists for the specified year and semester.' 
@@ -34,7 +34,8 @@ export const createSubject = async (req, res) => {
             name,
             year,
             semester,
-            lecturerId
+            lecturerId,
+            batchYear
         });
 
         // 5. Save the new subject to the database
@@ -84,14 +85,14 @@ export const enrollStudent = async (req, res) => {
 //multiple students
 export const enrollMultipleStudents = async (req, res) => {
   try {
-    const { subjectCode } = req.params;
+    const { subjectCode,batchYear,year } = req.params;
     const { reg_nos } = req.body; // array of reg_no
 
-    if (!subjectCode || !reg_nos || !Array.isArray(reg_nos) || reg_nos.length === 0) {
+    if (!subjectCode || !reg_nos ||!batchYear||!year|| !Array.isArray(reg_nos) || reg_nos.length === 0) {
       return res.status(400).json({ success: false,message: "Provide subjectCode  " });
     }
 
-    const subject = await Subject.findOne({ subjectCode });
+    const subject = await Subject.findOne({ subjectCode,batchYear,year });
     if (!subject) return res.status(404).json({success: false, message: "Subject not found." });
 
     // Filter out already enrolled students
@@ -124,11 +125,17 @@ export const getSubjects=async(req,res)=>{
 
 export const deleteSubjects=async(req,res)=>{
     try{
-        const subjects=await Subject.find()
-        if(subjects){
-            return res.status(202).json({success:true,message:"Subjects deleted"})
-        }
-        return res.status(400).json({success:false,message:"No Subjects"})
+        const result = await Subject.deleteMany();
+        if (result.deletedCount > 0) {
+      return res.status(200).json({
+        success: true,
+        message: `${result.deletedCount} subject(s) deleted successfully.`
+      });
+    }
+         return res.status(404).json({
+      success: false,
+      message: "No subjects found to delete."
+    });
     }catch(e){
         return res.status(500).json({success:false,message:e})
     }
