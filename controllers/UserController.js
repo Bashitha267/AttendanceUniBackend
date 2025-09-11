@@ -111,19 +111,24 @@ async function AdminApprove(req, res) {
     }
 const mailOptions = {  
   from: process.env.EMAIL,  
-  to: email,  
+  to: updatedUser.email,  
   subject: "Registration Approved.Welcome to Our System",  
-  text: `**Registration Approved**
+  html: `
+    <h2 style="color:#333;">Registration Approved</h2>
 
-Dear User,
+    <p>Dear User,</p>
 
-We are pleased to inform you that your registration has been **successfully approved**.  
-You can now log in to our system using your **registered email and password**.
+    <p>We are pleased to inform you that your registration has been 
+    <strong>successfully approved</strong>.</p>
 
-Thank you for joining us, and welcome aboard!
+    <p>You can now log in to our system using your 
+    <strong>registered email and password</strong>.</p>
 
-Best regards,  
-[Admin/Attendo Registration]`,  
+    <p>Thank you for joining us, and welcome aboard!</p>
+
+    <p>Best regards,<br/>  
+    <strong>Admin / Attendo Registration</strong></p>
+  `,  
 };
 
     // use await instead of callback
