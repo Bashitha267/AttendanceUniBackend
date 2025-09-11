@@ -109,6 +109,27 @@ async function AdminApprove(req, res) {
     if (!updatedUser) {
       return res.status(404).json({ success: false, message: "User not found or already approved" });
     }
+const mailOptions = {  
+  from: process.env.EMAIL,  
+  to: email,  
+  subject: "Registration Approved.Welcome to Our System",  
+  text: `**Registration Approved**
+
+Dear User,
+
+We are pleased to inform you that your registration has been **successfully approved**.  
+You can now log in to our system using your **registered email and password**.
+
+Thank you for joining us, and welcome aboard!
+
+Best regards,  
+[Admin/Attendo Registration]`,  
+};
+
+    // use await instead of callback
+    const info = await transporter.sendMail(mailOptions);
+
+    console.log("Email sent:", info.response);
 
     return res.status(200).json({ success: true, message: "User approved successfully" });
 
