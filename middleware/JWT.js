@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-dotenv.config();
 import jwt from "jsonwebtoken";
+dotenv.config();
 
 function verifyToken(req, res, next) {
   // Toverify user Token
