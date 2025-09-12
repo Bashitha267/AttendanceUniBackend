@@ -60,7 +60,7 @@ async function Signup(req, res) {
     }
     const hashedPassWord=await bcrypt.hash(password,10)
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const user=await User.create({name,email,password,dob,reg_no,gender,role,contact_no,img,password:hashedPassWord,otp:otp})
+    const user=await User.create({name,email,dob,reg_no,gender,role,contact_no,img,password:hashedPassWord,otp:otp})
  
       const mailOptions = {
       from: process.env.EMAIL, // use your env variable
