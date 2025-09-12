@@ -45,7 +45,7 @@ async function Login(req, res) {
 // Create a new user
 async function Signup(req, res) {
   const {name,email,password,role,dob,reg_no,gender,contact_no,img } = req.body;
-    if(!name||!email||!password||!role||!dob||!reg_no|!gender||!contact_no){
+    if(!name||!email||!password||!role||!dob||!reg_no||!gender||!contact_no){
       return res.json({message:"Missing Credentials"})
     }
     try{
