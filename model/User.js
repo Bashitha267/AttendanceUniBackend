@@ -19,7 +19,8 @@ const UserSchema=new schema(
     dob:{type:String,required:true},
     isVerified:{type:Boolean,default:false},
     otp:{type:String,default:""},
-    emailVerified:{type:Boolean,default:false}
+    emailVerified:{type:Boolean,default:false},
+    enrolledCourses: [{ type: String, default: [] }],
 
 }
 
