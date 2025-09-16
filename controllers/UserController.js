@@ -159,7 +159,7 @@ return   res.json({message:"success",user})
 }
 async function getNotApprovedUsers(req,res){
   try{
-    const users=await User.find({isApproved:false,emailVerified:false}) 
+    const users=await User.find({isApproved:false,emailVerified:true}) 
     if(users){
       return res.json({success:true,users})
     }

@@ -3,17 +3,14 @@ import { Subject } from '../model/Subject.model.js';
 import { User } from '../model/User.js';
 export const createSubject = async (req, res) => {
     try {
-        // 1. You correctly get the data here
         const { subjectCode, name, year, semester, lecturerId, batchYear, subpinCode } = req.body;
 
-        // 2. Your validation is fine
         if (!subjectCode || !name || !year || !semester || !lecturerId || !batchYear || !subpinCode) {
             return res.status(400).json({
                 message: 'Please provide all required fields: subjectCode, name, year, semester, and lecturerId.'
             });
         }
 
-        // ... (rest of the checks are fine)
         const subjectExists = await Subject.findOne({ subjectCode, year, semester, batchYear });
         if (subjectExists) {
             return res.status(409).json({
@@ -27,7 +24,6 @@ export const createSubject = async (req, res) => {
             });
         }
 
-        // 4. Create a new subject instance -- THIS IS THE FIX
         const newSubject = new Subject({
             subjectCode,
             name,
@@ -35,10 +31,9 @@ export const createSubject = async (req, res) => {
             semester,
             lecturerId,
             batchYear,
-            subpinCode // ✨ ADD THIS LINE
+            subpinCode 
         });
 
-        // 5. Save the new subject to the database
         const savedSubject = await newSubject.save();
 
         // 6. Send a success response
@@ -82,7 +77,6 @@ export const enrollStudent = async (req, res) => {
 }
 };
 
-//multiple students
 export const enrollMultipleStudents = async (req, res) => {
   try {
     const { subjectCode,batchYear,year } = req.params;
@@ -142,13 +136,12 @@ export const deleteSubjects=async(req,res)=>{
 }
 
 
-// Enroll a single student by email and subjectcode
 export const enrollStudentByEmail = async (req, res) => {
   try {
-    const { email, subjectCode } = req.body;
+    const { email, subjectCode,subpinCode } = req.body;
 
     
-    if (!email || !subjectCode) {
+    if (!email || !subjectCode||!subpinCode) {
       return res.status(400).json({
         success: false,
         message: "Please provide both email and subjectCode in body.",
@@ -175,7 +168,7 @@ export const enrollStudentByEmail = async (req, res) => {
 
     // Check  already enrolled User
     if (student.enrolledCourses.includes(subjectCode)) {
-      return res.status(409).json({
+      return res.status(400).json({
         success: false,
         message: "Student is already enrolled in this subject.",
       });
@@ -183,12 +176,17 @@ export const enrollStudentByEmail = async (req, res) => {
 
     // Check already enrolled 
     if (subject.studentsEnrolled.includes(student.reg_no)) {
-      return res.status(409).json({
+      return res.status(400).json({
         success: false,
         message: "Student is already enrolled in subject record.",
       });
     }
-
+    if(subject.subpinCode!=subpinCode){
+      return res.status(400).json({
+        success: false,
+        message: "Subject Pin Code is not valid",
+      });
+    }
     // add subject to student and student to subject
     student.enrolledCourses.push(subjectCode);
     subject.studentsEnrolled.push(student.reg_no);
