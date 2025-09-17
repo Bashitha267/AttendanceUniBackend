@@ -44,52 +44,69 @@ async function Login(req, res) {
 }
 // Create a new user
 async function Signup(req, res) {
-  const {name,email,password,role,dob,reg_no,gender,contact_no,img } = req.body;
-    if(!name||!email||!password||!role||!dob||!reg_no||!gender||!contact_no){
-      return res.json({message:"Missing Credentials"})
+  try {
+    const { name, email, password, role, dob, reg_no, gender, contact_no, img } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password || !role || !dob || !reg_no || !gender || !contact_no) {
+      return res.status(400).json({ success: false, message: "Missing credentials" });
     }
-    try{
-      const existingUser=await User.findOne({email});
-    const exisitingReg=await User.findOne({reg_no})
-    if(existingUser){
-      return res.json({message:"Email  already registered"});
+
+    // Check if email or reg_no already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "Email already registered" });
     }
-    if(exisitingReg){
-      return res.json({message:"Registration number  already registered"});
-      
+
+    const existingReg = await User.findOne({ reg_no });
+    if (existingReg) {
+      return res.status(400).json({ success: false, message: "Registration number already registered" });
     }
-    const hashedPassWord=await bcrypt.hash(password,10)
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const user=await User.create({name,email,dob,reg_no,gender,role,contact_no,img,password:hashedPassWord,otp:otp})
- 
-      const mailOptions = {
-      from: process.env.EMAIL, // use your env variable
-      to: email,               // now dynamic
+
+    // Create user
+    const user = await User.create({
+      name,
+      email,
+      dob,
+      reg_no,
+      gender,
+      role,
+      contact_no,
+      img,
+      password: hashedPassword,
+      otp,
+    });
+
+    // Send OTP email
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
       subject: "OTP Verification",
-      text: `Hello! Your OTP code is ${user.otp}`,
+      text: `Hello! Your OTP code is ${otp}`,
     };
 
-    // use await instead of callback
-    const info = await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
-    console.log("Email sent:", info.response);
+    // Save user and generate JWT
+    await user.save();
+    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    res.cookie("token", token, { httpOnly: true });
 
-    // return res.json({
-    //   success: true,
-    //   message: "Verification email sent",
-    //   otp, // ⚠️ remove in production, store securely instead
-    // });
-    await user.save()
-    const token=jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'7d'})
-    res.cookie('token',token)
-    return res.json({success:true})
+    // Return success message
+    return res.status(200).json({ success: true, message: "OTP sent to your email" });
 
-    }
-    catch(e){
-      res.json({message:e})
-    }
-
+  } catch (e) {
+    console.error("Signup error:", e);
+    return res.status(500).json({ success: false, message: e.message || "Server error" });
+  }
 }
+
 //admin approve
 // Approve a user
 
