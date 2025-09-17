@@ -84,22 +84,28 @@ async function Signup(req, res) {
     });
 
     // Send OTP email
-    const mailOptions = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: "OTP Verification",
-      text: `Hello! Your OTP code is ${otp}`,
-    };
+    try {
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: email,
+    subject: "OTP Verification",
+    text: `Hello! Your OTP code is ${otp}`,
+  };
 
-    await transporter.sendMail(mailOptions);
+  // Send OTP email
+  await transporter.sendMail(mailOptions);
 
-    // Save user and generate JWT
-    await user.save();
-    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.cookie("token", token, { httpOnly: true });
+  // Save user and generate JWT
+  await user.save();
+  const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+  res.cookie("token", token, { httpOnly: true });
 
-    // Return success message
-    return res.status(200).json({ success: true, message: "OTP sent to your email" });
+  // Return success message
+  return res.status(200).json({ success: true, message: "OTP sent to your email" });
+} catch (error) {
+  console.error("Error sending email:", error);
+  return res.status(500).json({ success: false, message: "Unable to send email" });
+}
 
   } catch (e) {
     console.error("Signup error:", e);
