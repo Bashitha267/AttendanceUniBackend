@@ -92,51 +92,49 @@ async function Signup(req, res) {
 }
 //admin approve
 // Approve a user
+
 async function AdminApprove(req, res) {
   try {
     const { reg_no } = req.params;
-
     if (!reg_no) {
       return res.status(400).json({ success: false, message: "Registration number is required" });
     }
 
+    // update user
     const updatedUser = await User.findOneAndUpdate(
-      { reg_no: reg_no.trim(), isApproved: false }, // find unapproved user
-      { isApproved: true },                          // update
-      { new: true }                                  // return updated document
+      { reg_no: reg_no.trim() },
+      { isApproved: true },
+      { new: true }
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ success: false, message: "User not found or already approved" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-const mailOptions = {  
-  from: process.env.EMAIL,  
-  to: updatedUser.email,  
-  subject: "Registration Approved.Welcome to Our System",  
-  html: `
-    <h2 style="color:#333;">Registration Approved</h2>
 
-    <p>Dear User,</p>
+    if (updatedUser.isApproved !== true) {
+      return res.status(400).json({ success: false, message: "Approval failed" });
+    }
 
-    <p>We are pleased to inform you that your registration has been 
-    <strong>successfully approved</strong>.</p>
+    // send mail only after successful update
+    try {
+      const mailOptions = {  
+        from: process.env.EMAIL,  
+        to: updatedUser.email,  
+        subject: "Registration Approved - Welcome to Our System",  
+        html: `<h2>Registration Approved</h2>
+               <p>Dear ${updatedUser.name},</p>
+               <p>Your registration has been <strong>successfully approved</strong>.</p>
+               <p>You can now log in using your registered email and password.</p>
+               <p>Best regards,<br/>Admin / Attendo Registration</p>`
+      };
 
-    <p>You can now log in to our system using your 
-    <strong>registered email and password</strong>.</p>
+      await transporter.sendMail(mailOptions);
 
-    <p>Thank you for joining us, and welcome aboard!</p>
-
-    <p>Best regards,<br/>  
-    <strong>Admin / Attendo Registration</strong></p>
-  `,  
-};
-
-    // use await instead of callback
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log("Email sent:", info.response);
-
-    return res.status(200).json({ success: true, message: "User approved successfully" });
+      return res.status(200).json({ success: true, message: "User approved successfully and email sent" });
+    } catch (mailError) {
+      console.error("Email sending error:", mailError);
+      return res.status(500).json({ success: false, message: "User approved but email sending failed" });
+    }
 
   } catch (error) {
     console.error("AdminApprove Error:", error);
