@@ -285,6 +285,9 @@ async function SendMail(req, res) {
        return res.status(200).json({ success: true, message: "Verification Success.Pending Admin Approved" });
        
     }
+    else{
+       return res.status(200).json({ success: false, message: "Your OTP is incorrect" });
+    }
     
 
     
