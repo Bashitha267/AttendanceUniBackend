@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 // import sessionRoutes from "./routes/sessionRoutes.js";
+import lectureRoutes from "./routes/lectureRoutes.js";
 import subjects from "./routes/subject.routes.js";
 import userRoutes from "./routes/userRoutes.js";
 dotenv.config();
@@ -44,6 +45,7 @@ app.use("/users", userRoutes);
 
 // app.use("/sessions", SessionRoutes);
 app.use('/subjects',subjects)
+app.use('/lecturer',lectureRoutes)
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
