@@ -44,99 +44,120 @@ async function Login(req, res) {
 }
 // Create a new user
 async function Signup(req, res) {
-  const {name,email,password,role,dob,reg_no,gender,contact_no,img } = req.body;
-    if(!name||!email||!password||!role||!dob||!reg_no||!gender||!contact_no){
-      return res.json({message:"Missing Credentials"})
+  try {
+    const { name, email, password, role, dob, reg_no, gender, contact_no, img } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password || !role || !dob || !reg_no || !gender || !contact_no) {
+      return res.status(400).json({ success: false, message: "Missing credentials" });
     }
-    try{
-      const existingUser=await User.findOne({email});
-    const exisitingReg=await User.findOne({reg_no})
-    if(existingUser){
-      return res.json({message:"Email  already registered"});
+
+    // Check if email or reg_no already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "Email already registered" });
     }
-    if(exisitingReg){
-      return res.json({message:"Registration number  already registered"});
-      
+
+    const existingReg = await User.findOne({ reg_no });
+    if (existingReg) {
+      return res.status(400).json({ success: false, message: "Registration number already registered" });
     }
-    const hashedPassWord=await bcrypt.hash(password,10)
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const user=await User.create({name,email,dob,reg_no,gender,role,contact_no,img,password:hashedPassWord,otp:otp})
- 
-      const mailOptions = {
-      from: process.env.EMAIL, // use your env variable
-      to: email,               // now dynamic
-      subject: "OTP Verification",
-      text: `Hello! Your OTP code is ${user.otp}`,
-    };
 
-    // use await instead of callback
-    const info = await transporter.sendMail(mailOptions);
+    // Create user
+    const user = await User.create({
+      name,
+      email,
+      dob,
+      reg_no,
+      gender,
+      role,
+      contact_no,
+      img,
+      password: hashedPassword,
+      otp,
+    });
 
-    console.log("Email sent:", info.response);
+    // Send OTP email
+    try {
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: email,
+    subject: "OTP Verification",
+    text: `Hello! Your OTP code is ${otp}`,
+  };
 
-    // return res.json({
-    //   success: true,
-    //   message: "Verification email sent",
-    //   otp, // ⚠️ remove in production, store securely instead
-    // });
-    await user.save()
-    const token=jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'7d'})
-    res.cookie('token',token)
-    return res.json({success:true})
+  // Send OTP email
+  await transporter.sendMail(mailOptions);
 
-    }
-    catch(e){
-      res.json({message:e})
-    }
+  // Save user and generate JWT
+  await user.save();
+  const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+  res.cookie("token", token, { httpOnly: true });
 
+  // Return success message
+  return res.status(200).json({ success: true, message: "OTP sent to your email" });
+} catch (error) {
+  console.error("Error sending email:", error);
+  return res.status(500).json({ success: false, message: "Unable to send email" });
 }
+
+  } catch (e) {
+    console.error("Signup error:", e);
+    return res.status(500).json({ success: false, message: e.message || "Server error" });
+  }
+}
+
 //admin approve
 // Approve a user
+
 async function AdminApprove(req, res) {
   try {
     const { reg_no } = req.params;
-
     if (!reg_no) {
       return res.status(400).json({ success: false, message: "Registration number is required" });
     }
 
+    // update user
     const updatedUser = await User.findOneAndUpdate(
-      { reg_no: reg_no.trim(), isApproved: false }, // find unapproved user
-      { isApproved: true },                          // update
-      { new: true }                                  // return updated document
+      { reg_no: reg_no.trim() },
+      { isApproved: true },
+      { new: true }
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ success: false, message: "User not found or already approved" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-const mailOptions = {  
-  from: process.env.EMAIL,  
-  to: updatedUser.email,  
-  subject: "Registration Approved.Welcome to Our System",  
-  html: `
-    <h2 style="color:#333;">Registration Approved</h2>
 
-    <p>Dear User,</p>
+    if (updatedUser.isApproved !== true) {
+      return res.status(400).json({ success: false, message: "Approval failed" });
+    }
 
-    <p>We are pleased to inform you that your registration has been 
-    <strong>successfully approved</strong>.</p>
+    // send mail only after successful update
+    try {
+      const mailOptions = {  
+        from: process.env.EMAIL,  
+        to: updatedUser.email,  
+        subject: "Registration Approved - Welcome to Our System",  
+        html: `<h2>Registration Approved</h2>
+               <p>Dear ${updatedUser.name},</p>
+               <p>Your registration has been <strong>successfully approved</strong>.</p>
+               <p>You can now log in using your registered email and password.</p>
+               <p>Best regards,<br/>Admin / Attendo Registration</p>`
+      };
 
-    <p>You can now log in to our system using your 
-    <strong>registered email and password</strong>.</p>
+      await transporter.sendMail(mailOptions);
 
-    <p>Thank you for joining us, and welcome aboard!</p>
-
-    <p>Best regards,<br/>  
-    <strong>Admin / Attendo Registration</strong></p>
-  `,  
-};
-
-    // use await instead of callback
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log("Email sent:", info.response);
-
-    return res.status(200).json({ success: true, message: "User approved successfully" });
+      return res.status(200).json({ success: true, message: "User approved successfully and email sent" });
+    } catch (mailError) {
+      console.error("Email sending error:", mailError);
+      return res.status(500).json({ success: false, message: "User approved but email sending failed" });
+    }
 
   } catch (error) {
     console.error("AdminApprove Error:", error);
@@ -269,6 +290,9 @@ async function SendMail(req, res) {
       await user.updateOne({emailVerified:true})
        return res.status(200).json({ success: true, message: "Verification Success.Pending Admin Approved" });
        
+    }
+    else{
+       return res.status(200).json({ success: false, message: "Your OTP is incorrect" });
     }
     
 

@@ -1,55 +1,52 @@
+
 import { Subject } from '../model/Subject.model.js'; // Make sure the path to your model is correct
+
 
 import { User } from '../model/User.js';
 export const createSubject = async (req, res) => {
     try {
-        // 1. Get the data from the request body
-        const { subjectCode, name, year, semester, lecturerId,batchYear } = req.body;
+        const { subjectCode, name, year, semester, lecturerId, batchYear, subpinCode } = req.body;
 
-        // 2. Perform basic validation to ensure required fields are present
-        if (!subjectCode || !name || !year || !semester || !lecturerId||!batchYear) {
-            return res.status(400).json({ 
-                message: 'Please provide all required fields: subjectCode, name, year, semester, and lecturerId.' 
+        if (!subjectCode || !name || !year || !semester || !lecturerId || !batchYear || !subpinCode) {
+            return res.status(400).json({
+                message: 'Please provide all required fields: subjectCode, name, year, semester, and lecturerId.'
             });
         }
 
-        // 3. Check if this specific subject offering already exists
-        // The unique index in your model also protects against this, but this provides a clearer error message.
-        const subjectExists = await Subject.findOne({ subjectCode, year, semester,batchYear });
+        const subjectExists = await Subject.findOne({ subjectCode, year, semester, batchYear });
         if (subjectExists) {
-            return res.status(409).json({ // 409 Conflict
-                message: 'This subject offering already exists for the specified year and semester.' 
+            return res.status(409).json({
+                message: 'This subject offering already exists for the specified year and semester.'
             });
         }
-        const lec=await User.findOne({reg_no:lecturerId,isApproved:true,role:"lecturer"})
-        if(!lec){
-            return res.status(400).json({ 
-                message: 'Lecturer is not registered' 
+        const lec = await User.findOne({ reg_no: lecturerId, isApproved: true, role: "lecturer" })
+        if (!lec) {
+            return res.status(400).json({
+                message: 'Lecturer is not registered'
             });
         }
 
-        // 4. Create a new subject instance
         const newSubject = new Subject({
             subjectCode,
             name,
             year,
             semester,
             lecturerId,
-            batchYear
+            batchYear,
+            subpinCode 
         });
 
-        // 5. Save the new subject to the database
         const savedSubject = await newSubject.save();
 
-        // 6. Send a success response with the newly created data
-        res.status(201).json({success:true,message:"New Subject Added Successfully"});
+        // 6. Send a success response
+        res.status(201).json({ success: true, message: "New Subject Added Successfully" });
 
     } catch (error) {
-        // Handle any potential errors during the process
+        // Handle any potential errors
         console.error('Error creating subject:', error);
-        res.status(500).json({ 
-            message: 'Server error while creating the subject.', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Server error while creating the subject.',
+            error: error.message
         });
     }
 };
@@ -82,7 +79,6 @@ export const enrollStudent = async (req, res) => {
 }
 };
 
-//multiple students
 export const enrollMultipleStudents = async (req, res) => {
   try {
     const { subjectCode,batchYear,year } = req.params;
@@ -140,3 +136,112 @@ export const deleteSubjects=async(req,res)=>{
         return res.status(500).json({success:false,message:e})
     }
 }
+
+
+export const enrollStudentByEmail = async (req, res) => {
+  try {
+    const { email, subjectCode,subpinCode } = req.body;
+
+    
+    if (!email || !subjectCode||!subpinCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide both email and subjectCode in body.",
+      });
+    }
+
+    // Find the student
+    const student = await User.findOne({ email, role: "student", isApproved: true });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found or not approved.",
+      });
+    }
+
+    // Find the subject
+    const subject = await Subject.findOne({ subjectCode });
+    if (!subject) {
+      return res.status(404).json({
+        success: false,
+        message: "Subject not found.",
+      });
+    }
+
+    // Check  already enrolled User
+    if (student.enrolledCourses.includes(subjectCode)) {
+      return res.status(400).json({
+        success: false,
+        message: "Student is already enrolled in this subject.",
+      });
+    }
+
+    // Check already enrolled 
+    if (subject.studentsEnrolled.includes(student.reg_no)) {
+      return res.status(400).json({
+        success: false,
+        message: "Student is already enrolled in subject record.",
+      });
+    }
+    if(subject.subpinCode!=subpinCode){
+      return res.status(400).json({
+        success: false,
+        message: "Subject Pin Code is not valid",
+      });
+    }
+    // add subject to student and student to subject
+    student.enrolledCourses.push(subjectCode);
+    subject.studentsEnrolled.push(student.reg_no);
+
+    await student.save();
+    await subject.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Student ${student.reg_no} enrolled into ${subjectCode} successfully.`,
+    });
+  } catch (error) {
+    console.error("Error enrolling student:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while enrolling student.",
+      error: error.message,
+    });
+  }
+};
+
+
+export const getEnrolledSubjects = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required." });
+    }
+
+    // 1. Find the student
+    const student = await User.findOne({ email, role: "student" });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found." });
+    }
+
+    // 2. If no courses enrolled
+    if (!student.enrolledCourses || student.enrolledCourses.length === 0) {
+      return res.status(200).json({ success: true, subjects: [] });
+    }
+
+    // 3. Get subject details
+    const subjects = await Subject.find({
+      subjectCode: { $in: student.enrolledCourses },
+    })
+
+    return res.status(200).json({ success: true, subjects });
+  } catch (error) {
+    console.error("Error fetching enrolled subjects:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching enrolled subjects.",
+      error: error.message,
+    });
+  }
+};
