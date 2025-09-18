@@ -1,4 +1,6 @@
-import { Subject } from '../model/Subject.model.js';
+
+import { Subject } from '../model/Subject.model.js'; // Make sure the path to your model is correct
+
 
 import { User } from '../model/User.js';
 export const createSubject = async (req, res) => {

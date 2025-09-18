@@ -8,6 +8,17 @@ const subjectSchema = new schema(
     year: { type: Number, required: true },
     semester: { type: Number, required: true },
      batchYear: { type: Number, required: true },
+
+    studentsEnrolled : [{
+        type: String, 
+      default:[]
+    }],
+    lecturerId : {
+       type:String,
+
+        required: true
+    }
+
  
      studentsEnrolled: [{ type: String, default: [] }],
 
@@ -16,7 +27,7 @@ const subjectSchema = new schema(
 
     subpinCode: { type: String, required: true },
     
-    
+
   },
   { timestamps: true }
 );
