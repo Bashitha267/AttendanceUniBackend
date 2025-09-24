@@ -170,7 +170,7 @@ async function AdminApprove(req, res) {
 //getusers for testing
 async function getUsers(req,res) {
   try{
-const user=await User.find({},"name email contact_no reg_no emailVerified")
+const user=await User.find({},"name email contact_no reg_no emailVerified role")
 return   res.json({message:"success",user})
   }catch(e){
     return res.json({message:e})
