@@ -1,6 +1,6 @@
 import { Router } from "express";
 // 1. Correct the import path to point to your subject controller
-import { createSubject, deleteSubjects, enrollMultipleStudents, enrollStudent, enrollStudentByEmail, getEnrolledSubjects, getSubjects } from "../controllers/SubjectController.js";
+import { createSubject, deleteSubjects, enrollMultipleStudents, enrollStudent, enrollStudentByEmail, getEnrolledSubjects, getSubjects, getSubjectsById } from "../controllers/SubjectController.js";
 
 const router = Router();
 
@@ -15,6 +15,7 @@ router.post("/:subjectCode/:batchYear/:year/enroll", enrollMultipleStudents);
 // router.get('/', getAllSubjects);
 // router.get('/:id', getSubjectById);
 router.get("/getsubjects",getSubjects)
+router.get("/getsubjects/:_id",getSubjectsById)
 router.delete("/deletesubjects",deleteSubjects)
 router.post('/enrolsubjects',enrollStudentByEmail)
 router.get('/getensub/:email',getEnrolledSubjects)

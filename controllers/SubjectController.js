@@ -210,7 +210,29 @@ export const enrollStudentByEmail = async (req, res) => {
   }
 };
 
+export const getSubjectsById=async(req,res)=>{
+  try{
+    const {_id}=req.params
+    if(!_id){
+      return res.status(400).json({ success: false, message: "_ID is required." });
+      
 
+    }
+    const subject=await Subject.findOne({_id});
+    if(!subject){
+       return res.status(404).json({ success: false, message: "Subject not found." });
+    }
+    return res.json({success:true,subject}).status(200)
+
+  }catch(error){
+    console.error("Error fetching enrolled subjects:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching enrolled subjects.",
+      error: error.message,
+    });
+  }
+}
 export const getEnrolledSubjects = async (req, res) => {
   try {
     const { email } = req.params;
