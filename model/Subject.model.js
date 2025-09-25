@@ -16,6 +16,10 @@ const subjectSchema = new schema(
        type:String,
 
         required: true
+    },
+    subpinCode:{
+      type:String,
+      required
     }
   },
   { timestamps: true }
