@@ -124,20 +124,20 @@ export const markAttendance = async (req, res) => {
     const classId = req.params._id;         
     const { studentId } = req.body;         
     if (!studentId) {
-      return res.status(400).json({ success: false, message: "studentId is required" });
+      return res.status(200).json({ success: false, message: "studentId is required" });
     }
 
     const classDoc = await Class.findById(classId);
     if (!classDoc) {
-      return res.status(404).json({ success: false, message: "Class not found" });
+      return res.status(200).json({ success: false, message: "Class not found" });
     }
     const stu=await User.find({_id:studentId})
     if(!stu){
-      return res.status(404).json({ success: false, message: "Student  not found" });
+      return res.status(200).json({ success: false, message: "Student  not found" });
 
     }
     if (classDoc.studentsAttended.includes(studentId)) {
-      return res.status(400).json({ success: false, message: "Student already marked as attended" });
+      return res.status(200).json({ success: false, message: "Student already marked as attended" });
     }
 
     classDoc.studentsAttended.push(studentId);
@@ -146,6 +146,6 @@ export const markAttendance = async (req, res) => {
     return res.status(200).json({ success: true, message: "Attendance marked successfully", data: classDoc });
   } catch (error) {
     console.error("Error marking attendance:", error);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res.status(400).json({ success: false, message: "Internal Server Error" });
   }
 };
