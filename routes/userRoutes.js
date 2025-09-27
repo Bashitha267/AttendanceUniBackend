@@ -15,7 +15,7 @@ router.delete('/deleteUsers',UserController.DeleteAllUsers)
 router.get('/getnotapproved',UserController.getNotApprovedUsers)
 router.delete('/deleteuser/:reg_no',UserController.DeleteUser)
 router.delete('/deleteuserbyid/:_id',UserController.DeleteUserByEmail)
-
+router.get('/getbyid/:id',UserController.getUsersbyID)
 //edit user details
 // router.post(
 //   "/edituserdetails",
