@@ -2,29 +2,40 @@ import mongoose from "mongoose";
 const schema=mongoose.Schema
 const ClassShema=new schema({
     startTime:{
-        type:Date,
+        type:String,
         required:true
     },
       endTime:{
-        type:Date,
+        type:String,
         required:true
     },
     subjectName:{
-        type:schema.Types.ObjectId,
-        ref:'Subject'
+        type:String
     },
     studentsAttended:[{
-        type:schema.Types.ObjectId,
-        ref:'User',
-        required:true
+        type:String
+        
+        
     }],
-    lecture : {
-        type: schema.Types.ObjectId,
-        ref: 'User',
+    lecturer : {
+        type: String,
+   
+        required: true
+    },
+    registor:{
+        type: String,
         required: true
     },
     date:{
         type:Date,
+        required:true
+    },
+    isCompleted:{
+        type:Boolean,
+        default:false
+    },
+    pinCode:{
+        type:String,
         required:true
     }
 
