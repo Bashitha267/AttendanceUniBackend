@@ -183,6 +183,7 @@ export const enrollStudentByEmail = async (req, res) => {
         message: "Student is already enrolled in subject record.",
       });
     }
+    console.log("Subject pin code:",subject.subpinCode)
     if(subject.subpinCode!=subpinCode){
       return res.status(400).json({
         success: false,
