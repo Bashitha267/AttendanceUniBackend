@@ -10,7 +10,7 @@ export const addClass=async (req,res)=>{
         const exis_Lec=await User.findOne({reg_no:lecturer,role:"lecturer"})
         const exis_reg=await User.findOne({reg_no:registor,role:"registor"})
        
-        const exis_sub=await Subject.findOne({subjectCode:subjectID})
+        const exis_sub=await Subject.findOne({_id:subjectID})
         if(!exis_Lec){
             return res.json({success:false,message:"Cannot find a lecturer regarding to Lecturer_id"})
             
@@ -23,8 +23,16 @@ export const addClass=async (req,res)=>{
             return res.json({success:false,message:"Cannot find a course regarding to provided ID"})
 
         }
-        const newClass=await Class.create(req.body)
-        await newClass.save();
+       const newClass = await Class.create({
+      startTime,
+      endTime,
+      subjectID,
+      lecturer: exis_Lec._id,
+      registor: exis_reg._id,
+      date,
+      pinCode
+    });
+    newClass.save();
 
         return res.json({success:true,message:"Class Created Successfully"})
         
@@ -42,8 +50,8 @@ export const getAllClasses = async (req, res) => {
     const classes = await Class.find()
       .populate('lecturer', 'name reg_no')
       .populate('registor', 'name reg_no')
-      .populate('subjectName', 'subjectCode subjectName')
-      .sort({ createdAt: -1 }); // Sort by created time (optional)
+      .populate('subjectID', 'subjectCode name')
+      .sort({ createdAt: -1 }); 
 
     return res.json({ success: true, data: classes });
   } catch (error) {
@@ -56,12 +64,12 @@ export const getAllClasses = async (req, res) => {
 export const getIncompleteClasses = async (req, res) => {
   try {
     const incompleteClasses = await Class.find({ isCompleted: false })
-      .populate('lecturer', 'name reg_no')
+   .populate('lecturer', 'name reg_no')
       .populate('registor', 'name reg_no')
-      .populate('subjectName', 'subjectCode subjectName')
-      .sort({ date: 1 }); // Sort by date string ascending (if format is consistent)
+      .populate('subjectID', 'subjectCode name')
+      .sort({ createdAt: -1 }); 
 
-    return res.json({ success: true, data: incompleteClasses });
+    return res.json({ success: true, classes: incompleteClasses });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: 'Failed to fetch incomplete classes' });
@@ -88,5 +96,56 @@ export const markClassAsComplete = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: 'Failed to update class status' });
+  }
+};
+
+export const deleteAll = async (req, res) => {
+  try {
+    const result = await Class.deleteMany({}); // Deletes all documents in the Class collection
+
+    return res.json({
+      success: true,
+      message: `${result.deletedCount} classes deleted successfully`
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete all classes"
+    });
+  }
+};
+
+
+
+
+export const markAttendance = async (req, res) => {
+  try {
+    const classId = req.params._id;         
+    const { studentId } = req.body;         
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: "studentId is required" });
+    }
+
+    const classDoc = await Class.findById(classId);
+    if (!classDoc) {
+      return res.status(404).json({ success: false, message: "Class not found" });
+    }
+    const stu=await User.find({_id:studentId})
+    if(!stu){
+      return res.status(404).json({ success: false, message: "Student  not found" });
+
+    }
+    if (classDoc.studentsAttended.includes(studentId)) {
+      return res.status(400).json({ success: false, message: "Student already marked as attended" });
+    }
+
+    classDoc.studentsAttended.push(studentId);
+    await classDoc.save();
+
+    return res.status(200).json({ success: true, message: "Attendance marked successfully", data: classDoc });
+  } catch (error) {
+    console.error("Error marking attendance:", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

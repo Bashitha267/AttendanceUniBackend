@@ -9,21 +9,24 @@ const ClassShema=new schema({
         type:String,
         required:true
     },
-    subjectName:{
-        type:String
+    subjectID:{
+                type: mongoose.Schema.Types.ObjectId, ref: 'Subject',
+
     },
     studentsAttended:[{
-        type:String
+                type: mongoose.Schema.Types.ObjectId, ref: 'User',
+
         
         
     }],
     lecturer : {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId, ref: 'User',
    
         required: true
     },
     registor:{
-        type: String,
+                type: mongoose.Schema.Types.ObjectId, ref: 'User',
+
         required: true
     },
     date:{
