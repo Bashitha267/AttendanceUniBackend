@@ -50,7 +50,7 @@ export const getAllClasses = async (req, res) => {
     const classes = await Class.find()
       .populate('lecturer', 'name reg_no')
       .populate('registor', 'name reg_no')
-      .populate('subjectID', 'subjectCode name')
+      .populate('subjectID', 'subjectCode name year')
       .sort({ createdAt: -1 }); 
 
     return res.json({ success: true, data: classes });
