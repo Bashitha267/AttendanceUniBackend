@@ -119,10 +119,12 @@ export const deleteAll = async (req, res) => {
 
 
 
+
 export const markAttendance = async (req, res) => {
   try {
-    const classId = req.params._id;         
-    const { studentId } = req.body;         
+    const classId = req.params._id;
+    const { studentId } = req.body;
+
     if (!studentId) {
       return res.status(200).json({ success: false, message: "studentId is required" });
     }
@@ -131,11 +133,12 @@ export const markAttendance = async (req, res) => {
     if (!classDoc) {
       return res.status(200).json({ success: false, message: "Class not found" });
     }
-    const stu=await User.find({_id:studentId})
-    if(!stu){
-      return res.status(200).json({ success: false, message: "Student  not found" });
 
+    const stu = await User.findById(studentId);
+    if (!stu) {
+      return res.status(200).json({ success: false, message: "Student not found" });
     }
+
     if (classDoc.studentsAttended.includes(studentId)) {
       return res.status(200).json({ success: false, message: "Student already marked as attended" });
     }
@@ -143,7 +146,15 @@ export const markAttendance = async (req, res) => {
     classDoc.studentsAttended.push(studentId);
     await classDoc.save();
 
-    return res.status(200).json({ success: true, message: "Attendance marked successfully", data: classDoc });
+    // Populate studentsAttended with name and reg_no
+    const populatedClass = await Class.findById(classId)
+      .populate('studentsAttended', 'name reg_no');
+
+    return res.status(200).json({
+      success: true,
+      message: "Attendance marked successfully",
+      data: populatedClass
+    });
   } catch (error) {
     console.error("Error marking attendance:", error);
     return res.status(400).json({ success: false, message: "Internal Server Error" });
