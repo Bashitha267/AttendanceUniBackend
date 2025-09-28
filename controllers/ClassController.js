@@ -67,6 +67,7 @@ export const getIncompleteClasses = async (req, res) => {
    .populate('lecturer', 'name reg_no')
       .populate('registor', 'name reg_no')
       .populate('subjectID', 'subjectCode name')
+      .populate('studentsAttended', 'name reg_no')
       .sort({ createdAt: -1 }); 
 
     return res.json({ success: true, classes: incompleteClasses });
