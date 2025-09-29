@@ -1,7 +1,7 @@
 
+import Class from '../model/Class.js';
 import { Subject } from '../model/Subject.model.js'; // Make sure the path to your model is correct
-
-
+ 
 import { User } from '../model/User.js';
 export const createSubject = async (req, res) => {
     try {
@@ -176,7 +176,7 @@ export const enrollStudentByEmail = async (req, res) => {
       });
     }
 
-    // Check already enrolled 
+
     if (subject.studentsEnrolled.includes(student.reg_no)) {
       return res.status(400).json({
         success: false,
@@ -190,7 +190,7 @@ export const enrollStudentByEmail = async (req, res) => {
         message: "Subject Pin Code is not valid",
       });
     }
-    // add subject to student and student to subject
+    
     student.enrolledCourses.push(subjectCode);
     subject.studentsEnrolled.push(student.reg_no);
 
@@ -234,6 +234,7 @@ export const getSubjectsById=async(req,res)=>{
     });
   }
 }
+
 export const getEnrolledSubjects = async (req, res) => {
   try {
     const { email } = req.params;
@@ -242,23 +243,48 @@ export const getEnrolledSubjects = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email is required." });
     }
 
-    // 1. Find the student
+
     const student = await User.findOne({ email, role: "student" });
     if (!student) {
       return res.status(404).json({ success: false, message: "Student not found." });
     }
 
-    // 2. If no courses enrolled
+    
     if (!student.enrolledCourses || student.enrolledCourses.length === 0) {
       return res.status(200).json({ success: true, subjects: [] });
     }
 
-    // 3. Get subject details
     const subjects = await Subject.find({
       subjectCode: { $in: student.enrolledCourses },
-    })
+    });
+    
+    
+    const enrichedSubjects = await Promise.all(
+      subjects.map(async (subject) => {
+      
+        
+        const allClasses = await Class.find({ "subjectID": subject._id });
+      
+        const totalClasses = allClasses.length;
 
-    return res.status(200).json({ success: true, subjects });
+       
+        const attendedClasses = allClasses.filter(cls =>
+          cls.studentsAttended.includes(student._id.toString())
+        ).length;
+
+        return {
+          ...subject.toObject(),
+          totalClasses,
+          attendedClasses,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      subjects: enrichedSubjects,
+    });
+
   } catch (error) {
     console.error("Error fetching enrolled subjects:", error);
     res.status(500).json({
