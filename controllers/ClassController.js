@@ -139,7 +139,9 @@ export const markAttendance = async (req, res) => {
     if (!stu) {
       return res.status(200).json({ success: false, message: "Student not found" });
     }
-    if(!stu.enrolledCourses.includes(classDoc.subjectID)){
+    const sub=await Subject.findById(classDoc.subjectID)
+    // console.log(sub.subjectCode)
+    if(!stu.enrolledCourses.includes(sub.subjectCode)){
        return res.status(200).json({ success: false, message: "Student not enrolled to course" });
     }
     if (classDoc.studentsAttended.includes(studentId)) {
