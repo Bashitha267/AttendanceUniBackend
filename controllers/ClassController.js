@@ -51,6 +51,8 @@ export const getAllClasses = async (req, res) => {
       .populate('lecturer', 'name reg_no')
       .populate('registor', 'name reg_no')
       .populate('subjectID', 'subjectCode name year')
+      .populate('studentsAttended', 'name reg_no')
+
       .sort({ createdAt: -1 }); 
 
     return res.json({ success: true, data: classes });
@@ -117,7 +119,39 @@ export const deleteAll = async (req, res) => {
   }
 };
 
+export const deleteByID = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Class ID is required",
+      });
+    }
+
+    const result = await Class.deleteOne({ _id: id });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Class not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Class deleted successfully",
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete class",
+      error: e.message,
+    });
+  }
+};
 
 
 
