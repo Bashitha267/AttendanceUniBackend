@@ -47,7 +47,7 @@ export const addClass=async (req,res)=>{
 // get all classes
 export const getAllClasses = async (req, res) => {
   try {
-    const classes = await Class.find()
+    const classes = await Class.find({isCompleted:true})
       .populate('lecturer', 'name reg_no')
       .populate('registor', 'name reg_no')
       .populate('subjectID', 'subjectCode name year')
@@ -124,7 +124,7 @@ export const deleteByID = async (req, res) => {
     const { id } = req.params;
 
     if (!id) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: "Class ID is required",
       });
@@ -133,7 +133,7 @@ export const deleteByID = async (req, res) => {
     const result = await Class.deleteOne({ _id: id });
 
     if (result.deletedCount === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         message: "Class not found",
       });
