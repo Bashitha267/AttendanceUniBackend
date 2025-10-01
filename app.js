@@ -3,7 +3,9 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import fileUpload from "express-fileupload";
 import mongoose from "mongoose";
+
 // import sessionRoutes from "./routes/sessionRoutes.js";
 import classRoutes from './routes/classRoutes.js';
 import lectureRoutes from "./routes/lectureRoutes.js";
@@ -22,6 +24,15 @@ app.use(
       callback(null, origin || true); // reflect the request origin
     },
     credentials: true, // allow cookies / auth headers
+  })
+);
+app.use(
+  fileUpload({
+    useTempFiles: false,
+    
+   
+    limits: { fileSize: 40 * 1024 * 1024 }, // 10MB limit
+    abortOnLimit:false,
   })
 );
 app.use(cookieParser());
