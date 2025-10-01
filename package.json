@@ -13,6 +13,7 @@
   "author": "Dhruvil Patel & Rahul Agnihotri",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.6.8",
     "bcrypt": "^6.0.0",
     "body-parser": "^1.20.2",
@@ -28,6 +29,7 @@
     "mongoose": "^8.2.4",
     "nodemailer": "^6.9.13",
     "nodemon": "^3.1.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "sendgrid": "^5.2.3"
   }
 }
