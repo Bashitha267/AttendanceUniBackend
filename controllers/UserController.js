@@ -1,13 +1,12 @@
+import sgMail from '@sendgrid/mail';
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
-import cloudinary from "../middleware/cloudinary.js";
-
 import jwt from "jsonwebtoken";
-import transporter from "../middleware/Mailer.js";
+import cloudinary from "../middleware/cloudinary.js";
 import { Teacher } from "../model/Teacher.js";
 import { User } from "../model/User.js";
 dotenv.config();
-
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 //login
 async function Login(req, res) {
   const { email, password } = req.body;
@@ -47,7 +46,7 @@ async function Login(req, res) {
 // Create a new user
 async function Signup(req, res) {
   try {
-    const { name, email, password, role, dob, reg_no, gender, contact_no, img } = req.body;
+    const { name, email, password, role, dob, reg_no, gender, contact_no, image } = req.body;
 
     // Validate required fields
     if (!name || !email || !password || !role || !dob || !reg_no || !gender || !contact_no) {
@@ -80,7 +79,7 @@ async function Signup(req, res) {
       gender,
       role,
       contact_no,
-      img,
+      image,
       password: hashedPassword,
       otp,
     });
@@ -95,7 +94,7 @@ async function Signup(req, res) {
   };
 
   // Send OTP email
-  await transporter.sendMail(mailOptions);
+  await sgMail.send(mailOptions);
 
   // Save user and generate JWT
   await user.save();
@@ -153,7 +152,7 @@ async function AdminApprove(req, res) {
                <p>Best regards,<br/>Admin / Attendo Registration</p>`
       };
 
-      await transporter.sendMail(mailOptions);
+      await sgMail.send(mailOptions);
 
       return res.status(200).json({ success: true, message: "User approved successfully and email sent" });
     } catch (mailError) {
