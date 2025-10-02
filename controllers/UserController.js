@@ -46,7 +46,7 @@ async function Login(req, res) {
 // Create a new user
 async function Signup(req, res) {
   try {
-    const { name, email, password, role, dob, reg_no, gender, contact_no, image } = req.body;
+    const { name, email, password, role, dob, reg_no, gender, contact_no, image,isApproved,emailVerified } = req.body;
 
     // Validate required fields
     if (!name || !email || !password || !role || !dob || !reg_no || !gender || !contact_no) {
@@ -75,6 +75,8 @@ async function Signup(req, res) {
       name,
       email,
       dob,
+      isApproved,
+      emailVerified,
       reg_no,
       gender,
       role,
