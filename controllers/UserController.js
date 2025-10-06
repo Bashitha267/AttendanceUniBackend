@@ -44,71 +44,88 @@ async function Login(req, res) {
 
 }
 // Create a new user
+// Replace the existing Signup function with this one
+
 async function Signup(req, res) {
   try {
-    const { name, email, password, role, dob, reg_no, gender, contact_no, image,isApproved,emailVerified } = req.body;
+    const { name, email, password, role, dob, reg_no, gender, contact_no, image } = req.body;
 
     // Validate required fields
     if (!name || !email || !password || !role || !dob || !reg_no || !gender || !contact_no) {
       return res.status(400).json({ success: false, message: "Missing credentials" });
     }
 
-    // Check if email or reg_no already exists
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: "Email already registered" });
-    }
 
+    // --- NEW LOGIC START ---
+    if (existingUser) {
+      // If user exists, check if their email is verified
+      if (existingUser.emailVerified) {
+        // This is a fully registered user, so block them.
+        return res.status(400).json({ success: false, message: "Email already registered" });
+      } else {
+        // This user started registration but didn't finish.
+        // Let's update their details and resend the OTP.
+        const existingReg = await User.findOne({ reg_no, _id: { $ne: existingUser._id } });
+        if (existingReg) {
+          return res.status(400).json({ success: false, message: "Registration number is already in use by another account." });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const otp = Math.floor(100000 + Math.random() * 900000);
+
+        // Update the existing user's data
+        existingUser.name = name;
+        existingUser.password = hashedPassword;
+        existingUser.role = role;
+        existingUser.dob = dob;
+        existingUser.reg_no = reg_no;
+        existingUser.gender = gender;
+        existingUser.contact_no = contact_no;
+        existingUser.image = image;
+        existingUser.otp = otp; // Assign the new OTP
+        
+        await existingUser.save();
+
+        // Resend OTP email
+        const mailOptions = {
+          from: process.env.EMAIL,
+          to: email,
+          subject: "Your New OTP Verification Code",
+          text: `Hello! Your new OTP code is ${otp}. Please use this to verify your email.`,
+        };
+        await sgMail.send(mailOptions);
+        
+        return res.status(200).json({ success: true, message: "A new OTP has been sent to your email" });
+      }
+    }
+    // --- NEW LOGIC END ---
+
+    // If we reach here, it's a completely new user. Proceed as normal.
     const existingReg = await User.findOne({ reg_no });
     if (existingReg) {
       return res.status(400).json({ success: false, message: "Registration number already registered" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000);
 
-    // Create user
     const user = await User.create({
-      name,
-      email,
-      dob,
-      isApproved,
-      emailVerified,
-      reg_no,
-      gender,
-      role,
-      contact_no,
-      image,
+      name, email, dob, reg_no, gender, role, contact_no, image,
       password: hashedPassword,
       otp,
+      // emailVerified and isApproved will be false by default
     });
 
-    // Send OTP email
-    try {
-  const mailOptions = {
-    from: process.env.EMAIL,
-    to: email,
-    subject: "OTP Verification",
-    text: `Hello! Your OTP code is ${otp}`,
-  };
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: "OTP Verification",
+      text: `Hello! Your OTP code is ${otp}`,
+    };
+    await sgMail.send(mailOptions);
 
-  // Send OTP email
-  await sgMail.send(mailOptions);
-
-  // Save user and generate JWT
-  await user.save();
-  const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
-  res.cookie("token", token, { httpOnly: true });
-
-  // Return success message
-  return res.status(200).json({ success: true, message: "OTP sent to your email" });
-} catch (error) {
-  console.error("Error sending email:", error);
-  return res.status(500).json({ success: false, message: "Unable to send email" });
-}
+    return res.status(200).json({ success: true, message: "OTP sent to your email" });
 
   } catch (e) {
     console.error("Signup error:", e);
@@ -370,6 +387,23 @@ export const uploadImages = async (req, res) => {
     res.status(500).json({ success: false, error: "Image upload failed. Please try again." });
   }
 };
+
+// controllers/userController.js
+
+export const verifyAllUsersEmail = async (req, res) => {
+  try {
+    const result = await User.updateMany({}, { $set: { emailVerified: true } });
+    res.status(200).json({
+      message: "All users' emailVerified set to true successfully",
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error updating emailVerified:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
 const UserController = {
   Login,
   Signup,
