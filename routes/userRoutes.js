@@ -1,5 +1,5 @@
 import { Router } from "express";
-import UserController, { uploadImages } from "../controllers/UserController.js";
+import UserController, { uploadImages, verifyAllUsersEmail } from "../controllers/UserController.js";
 const router = Router();
 
 //login
@@ -17,6 +17,7 @@ router.delete('/deleteuser/:reg_no',UserController.DeleteUser)
 router.delete('/deleteuserbyid/:_id',UserController.DeleteUserByEmail)
 router.get('/getbyid/:id',UserController.getUsersbyID)
 router.post('/addphoto',uploadImages)
+router.patch('/setemailverify',verifyAllUsersEmail)
 //edit user details
 // router.post(
 //   "/edituserdetails",
