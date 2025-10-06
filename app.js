@@ -18,14 +18,34 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB;
 // Middleware
+// --- REPLACE YOUR CURRENT cors MIDDLEWARE WITH THIS ---
+
+// List of allowed origins (your frontend URLs)
+const allowedOrigins = [
+  'https://attendonew.netlify.app',
+  'http://localhost:3000', // Add your local dev URL if it's different
+  'http://localhost:5173'  // Example for Vite/React dev server
+];
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      callback(null, origin || true); // reflect the request origin
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if the request origin is in our list of allowed origins
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+      }
+      
+      return callback(null, true);
     },
-    credentials: true, // allow cookies / auth headers
+    credentials: true, // This allows cookies to be sent
   })
 );
+
+// --- THE REST OF YOUR MIDDLEWARE (fileUpload, cookieParser, etc.) GOES AFTER THIS ---
 app.use(
   fileUpload({
     useTempFiles: false,
