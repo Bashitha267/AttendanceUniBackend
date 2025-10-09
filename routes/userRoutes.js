@@ -11,7 +11,7 @@ router.get('/getusers',UserController.getUsers)
 // forgot password
 router.post("/forgotpassword", UserController.ForgotPassword);
 router.put('/approve/:reg_no',UserController.AdminApprove)
-router.delete('/deleteUsers',UserController.DeleteAllUsers)
+// router.delete('/deleteUsers',UserController.DeleteAllUsers)
 router.get('/getnotapproved',UserController.getNotApprovedUsers)
 router.delete('/deleteuser/:reg_no',UserController.DeleteUser)
 router.delete('/deleteuserbyid/:_id',UserController.DeleteUserByEmail)
@@ -26,5 +26,6 @@ router.patch('/setemailverify',verifyAllUsersEmail)
 // );gi
 // send mail
 router.post("/sendmail", UserController.SendMail);
+router.patch('/update/:reg_no', UserController.updateUserByRegNo); 
 
 export default router;
