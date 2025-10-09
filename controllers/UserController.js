@@ -269,16 +269,16 @@ async function EditUserDetails(req, res) {
   }
 }
 // DELETE all users
-async function DeleteAllUsers(req, res) {
-  try {
-    await User.deleteMany({}); // removes all documents from User collection
+// async function DeleteAllUsers(req, res) {
+//   try {
+//     await User.deleteMany({}); // removes all documents from User collection
 
-    return res.status(200).json({ message: "All users deleted successfully" });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Error deleting users", error: err.message });
-  }
-}
+//     return res.status(200).json({ message: "All users deleted successfully" });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ message: "Error deleting users", error: err.message });
+//   }
+// }
 async function DeleteUser(req, res) {
   try {
     let { reg_no } = req.params;
@@ -404,6 +404,52 @@ export const verifyAllUsersEmail = async (req, res) => {
   }
 };
 
+
+
+async function updateUserByRegNo(req, res) {
+  try {
+    const { reg_no } = req.params;
+    const { name, email, gender, contact_no } = req.body;
+
+    // Basic validation
+    if (!reg_no) {
+        return res.status(400).json({ success: false, message: "Registration number is required in the URL." });
+    }
+    if (!name || !email || !gender || !contact_no) {
+        return res.status(400).json({ success: false, message: "Please provide all required fields: name, dob, gender, contact_no." });
+    }
+
+    // Find the user and update their details
+    // The { new: true } option returns the modified document rather than the original
+    const updatedUser = await User.findOneAndUpdate(
+      { reg_no: reg_no.trim() },
+      {
+        $set: {
+          name,
+          email,
+          gender,
+          contact_no,
+         
+        },
+      },
+      { new: true, runValidators: true } // runValidators ensures schema rules are checked
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    return res.status(200).json({ 
+        success: true, 
+        message: "User details updated successfully.",
+        user: updatedUser 
+    });
+
+  } catch (error) {
+    console.error("Error updating user details:", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+}
 const UserController = {
   Login,
   Signup,
@@ -412,11 +458,13 @@ const UserController = {
   SendMail,
   AdminApprove,
   getUsers,
-  DeleteAllUsers,
+  
   getNotApprovedUsers,
   DeleteUser,
   DeleteUserByEmail,
-  getUsersbyID
+  getUsersbyID,
+  updateUserByRegNo,
+ 
 };
 
 export default UserController;
